@@ -64,6 +64,18 @@ class Othello:
 
         self.RUN = True
 
+        # Create a new Board object.
+        self.board = self.grid.board
+
+        # Set the current player to "black".
+        self.current_player = "black"
+
+        # Set the other player to "white".
+        self.other_player = "white"
+
+        # Set the game over flag to False.
+        self.game_over = False
+
     def run(self):
         while self.RUN == True:
             self.input()
@@ -126,7 +138,6 @@ class Othello:
 
         # Switch players.
         self.current_player = self.other_player
-
 
     def draw(self):
         self.screen.fill((0, 0, 0))
@@ -224,7 +235,6 @@ class Grid:
             newGameText = self.font.render('Play Again', 1, 'Black')
             endScreenImg.blit(newGameText, (120, 190))
         return endScreenImg
-
 
     def drawGrid(self, window):
         window.blit(self.gridBg, (0, 0))
