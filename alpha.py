@@ -102,27 +102,30 @@ class Othello:
                             self.grid.newGame()
                             self.gameOver = False
 
-
     def update(self):
-        if self.currentPlayer == -1:
-            new_time = pygame.time.get_ticks()
-            if new_time - self.time >= 100:
-                if not self.grid.findAvailMoves(self.grid.gridLogic, self.currentPlayer):
-                    self.gameOver = True
-                    return
-                cell, score = self.computerPlayer.computerHard(self.grid.gridLogic, 5, -64, 64, -1)
-                self.grid.insertToken(self.grid.gridLogic, self.currentPlayer, cell[0], cell[1])
-                swappableTiles = self.grid.swappableTiles(cell[0], cell[1], self.grid.gridLogic, self.currentPlayer)
-                for tile in swappableTiles:
-                    self.grid.animateTransitions(tile, self.currentPlayer)
-                    self.grid.gridLogic[tile[0]][tile[1]] *= -1
-                self.currentPlayer *= -1
+        """
+        Update the state of the game.
+        """
 
-        self.grid.player1Score = self.grid.calculatePlayerScore(self.player1)
-        self.grid.player2Score = self.grid.calculatePlayerScore(self.player2)
-        if not self.grid.findAvailMoves(self.grid.gridLogic, self.currentPlayer):
-            self.gameOver = True
+        # Get the current state of the board.
+        board = self.grid.board
+
+        # Get the list of available moves for the current player.
+        moves = self.computerPlayer.get_available_moves(board)
+
+        # If there are no available moves, the game is over.
+        if not moves:
+            self.game_over = True
             return
+
+        # Choose the best move.
+        move = self.computerPlayer.computerHard(board, self.color)
+
+        # Make the move.
+        self.grid.make_move(move)
+
+        # Switch players.
+        self.current_player = self.other_player
 
 
     def draw(self):
@@ -482,50 +485,50 @@ class ComputerPlayer(Player):
 
         return False
     
-    def computerHard(self, board, depth, alpha, beta, isMax):
+    def computerHard(self, board, color):
+        """
+        Find the best move for the computer player.
+        """
 
-        if depth == 0:
-            return None
+        # Initialize the best move and score.
+        best_move = None
+        best_score = -float("inf")
 
-        if isMax:
-            best_move = None
-            best_value = -float("inf")
-            for move in self.get_available_moves(board, self.color):
-                new_board = board.copy()
-                new_board.make_move(move, self.color)
-                new_value = self.computerHard(new_board, depth - 1, alpha, beta, False)
-                if new_value > best_value:
-                    best_value = new_value
-                    best_move = move
-                alpha = max(alpha, best_value)
-                if alpha >= beta:
-                    break
-            return best_move
-        else:
-            best_move = None
-            best_value = float("inf")
-            for move in self.get_available_moves(board, self.opponent_color):
-                new_board = board.copy()
-                new_board.make_move(move, self.opponent_color)
-                new_value = self.computerHard(new_board, depth - 1, alpha, beta, True)
-                if new_value < best_value:
-                    best_value = new_value
-                    best_move = move
-                beta = min(beta, best_value)
-                if alpha >= beta:
-                    break
-            return best_move
+        # Iterate over all possible moves.
+        for move in self.get_available_moves(board):
 
-    def get_available_moves(self, board, color):
+            # Make the move.
+            self.grid.make_move(move)
+
+            # Get the score of the move.
+            score = self.evaluate(board)
+
+            # Undo the move.
+            self.grid.undo_move(move)
+
+            # If the score is better than the best score, update the best move.
+            if score > best_score:
+                best_move = move
+                best_score = score
+
+        # Return the best move.
+        return best_move
+
+
+    def get_available_moves(self, board):
+        """
+        Get the list of available moves for the current player.
+        """
 
         moves = []
 
-        for row in range(board.get_board_size()[0]):
-            for col in range(board.get_board_size()[1]):
-                if board.is_valid_move(row, col, color):
+        for row in range(board.height):
+            for col in range(board.width):
+                if board.is_valid_move(row, col, self.color):
                     moves.append((row, col))
 
         return moves
+
 
 
 if __name__ == '__main__':
