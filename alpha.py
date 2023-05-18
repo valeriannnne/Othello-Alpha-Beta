@@ -1,6 +1,8 @@
 import pygame
 import random
 import copy
+import numpy as np
+
 
 #  utility functions
 def directions(x, y, minX=0, minY=0, maxX=7, maxY=7):
@@ -40,132 +42,19 @@ def evaluateBoard(grid, player):
             score -= col
     return score
 
-#  Classes
-class Othello:
-    def __init__(self):
-        pygame.init()
-        self.screen = pygame.display.set_mode((1100, 800))
-        pygame.display.set_caption('Othello')
-
-        self.player1 = 1
-        self.player2 = -1
-
-        self.currentPlayer = 1
-
-        self.time = 0
-
-        self.rows = 8
-        self.columns = 8
-
-        self.gameOver = True
-
-        self.grid = Grid(self.rows, self.columns, (80, 80), self)
-        self.computerPlayer = ComputerPlayer(self.grid)
-
-        self.RUN = True
-
-        # Create a new Board object.
-        self.board = self.grid.board
-
-        # Set the current player to "black".
-        self.current_player = "black"
-
-        # Set the other player to "white".
-        self.other_player = "white"
-
-        # Set the game over flag to False.
-        self.game_over = False
-
-    def run(self):
-        while self.RUN == True:
-            self.input()
-            self.update()
-            self.draw()
-
-    def input(self):
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                self.RUN = False
-
-            if event.type == pygame.MOUSEBUTTONDOWN:
-                if event.button == 3:
-                    self.grid.printGameLogicBoard()
-
-                if event.button == 1:
-                    if self.currentPlayer == 1 and not self.gameOver:
-                        x, y = pygame.mouse.get_pos()
-                        x, y = (x - 80) // 80, (y - 80) // 80
-                        validCells = self.grid.findAvailMoves(self.grid.gridLogic, self.currentPlayer)
-                        if not validCells:
-                            pass
-                        else:
-                            if (y, x) in validCells:
-                                self.grid.insertToken(self.grid.gridLogic, self.currentPlayer, y, x)
-                                swappableTiles = self.grid.swappableTiles(y, x, self.grid.gridLogic, self.currentPlayer)
-                                for tile in swappableTiles:
-                                    self.grid.animateTransitions(tile, self.currentPlayer)
-                                    self.grid.gridLogic[tile[0]][tile[1]] *= -1
-                                self.currentPlayer *= -1
-                                self.time = pygame.time.get_ticks()
-
-                    if self.gameOver:
-                        x, y = pygame.mouse.get_pos()
-                        if x >= 320 and x <= 480 and y >= 400 and y <= 480:
-                            self.grid.newGame()
-                            self.gameOver = False
-
-    def update(self):
-        """
-        Update the state of the game.
-        """
-
-        # Get the current state of the board.
-        board = self.grid.board
-
-        # Get the list of available moves for the current player.
-        moves = self.computerPlayer.get_available_moves(board)
-
-        # If there are no available moves, the game is over.
-        if not moves:
-            self.game_over = True
-            return
-
-        # Choose the best move.
-        move = self.computerPlayer.computerHard(board, self.color)
-
-        # Make the move.
-        self.grid.make_move(move)
-
-        # Switch players.
-        self.current_player = self.other_player
-
-    def draw(self):
-        self.screen.fill((0, 0, 0))
-        self.grid.drawGrid(self.screen)
-        pygame.display.update()
-
 class Grid:
-    def __init__(self, rows, columns, size, main):
-        self.GAME = main
-        self.y = rows
-        self.x = columns
-        self.size = size
-        self.whitetoken = loadImages('assets/WhiteToken.png', size)
-        self.blacktoken = loadImages('assets/BlackToken.png', size)
-        self.transitionWhiteToBlack = [loadImages(f'assets/BlackToWhite{i}.png', self.size) for i in range(1, 4)]
-        self.transitionBlackToWhite = [loadImages(f'assets/WhiteToBlack{i}.png', self.size) for i in range(1, 4)]
-        self.bg = self.loadBackGroundImages()
 
-        self.tokens = {}
+    def __init__(self, rows, columns, cell_size, othello):
+        self.rows = rows
+        self.columns = columns
+        self.cell_size = cell_size
+        self.othello = othello
+        self.board = np.zeros((rows, columns))
 
-        self.gridBg = self.createbgimg()
-
-        self.gridLogic = self.regenGrid(self.y, self.x)
-
-        self.player1Score = 0
-        self.player2Score = 0
-
-        self.font = pygame.font.SysFont('Arial', 20, True, False)
+    def draw(self, screen):
+        for row in range(self.rows):
+            for column in range(self.columns):
+                pygame.draw.rect(screen, self.board[row][column], (row * self.cell_size, column * self.cell_size, self.cell_size, self.cell_size))
 
     def newGame(self):
         self.tokens.clear()
@@ -344,6 +233,79 @@ class Grid:
             self.tokens[(cell[0], cell[1])].transition(self.transitionWhiteToBlack, self.whitetoken)
         else:
             self.tokens[(cell[0], cell[1])].transition(self.transitionBlackToWhite, self.blacktoken)
+
+class Othello:
+    def __init__(self):
+        pygame.init()
+        self.screen = pygame.display.set_mode((1100, 800))
+        pygame.display.set_caption('Othello')
+
+        self.player1 = 1
+        self.player2 = -1
+
+        self.currentPlayer = 1
+
+        self.time = 0
+
+        self.rows = 8
+        self.columns = 8
+
+        self.gameOver = True
+
+        self.grid = Grid(self.rows, self.columns, (80, 80), self)
+        self.computerPlayer = ComputerPlayer(self.grid)
+
+        self.RUN = True
+
+        # Create a new Board object.
+        self.board = np.array(self.grid.board)
+
+        # Set the current player to "black".
+        self.current_player = "black"
+
+        # Set the other player to "white".
+        self.other_player = "white"
+
+        # Set the game over flag to False.
+        self.game_over = False
+
+    def update(self):
+        """
+        Update the state of the game.
+        """
+
+        # Get the current state of the board.
+        board = self.grid.board
+
+        # Get the list of available moves for the current player.
+        moves = self.computerPlayer.get_available_moves(board)
+
+        # If there are no available moves, the game is over.
+        if not moves:
+            self.game_over = True
+            return
+
+        # Choose the best move.
+        move = self.computerPlayer.computerHard(board, self.color)
+
+        # Make the move.
+        self.grid.make_move(move)
+
+        # Switch players.
+        self.current_player = self.other_player
+
+    def draw(self):
+        self.grid.draw(self.screen)
+
+    def run(self):
+        while self.RUN:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    self.RUN = False
+
+            self.update()
+            self.draw()
+            pygame.display.update()
 
 class Token:
     def __init__(self, player, gridX, gridY, image, main):
@@ -524,22 +486,31 @@ class ComputerPlayer(Player):
         # Return the best move.
         return best_move
 
-
     def get_available_moves(self, board):
         """
         Get the list of available moves for the current player.
         """
 
+        # Get the current state of the board.
+        board = self.grid.board
+
+        # Get the list of available moves for the current player.
         moves = []
 
-        for row in range(board.height):
-            for col in range(board.width):
-                if board.is_valid_move(row, col, self.color):
-                    moves.append((row, col))
+        # Loop over all rows in the board.
+        for row in range(board.shape[0]):
+
+            # Loop over all columns in the board.
+            for column in range(board.shape[1]):
+
+                # If the current cell is empty,
+                if board[row][column] == 0:
+
+                    # Check if there are any available moves in the current cell.
+                    if self.is_available_move(row, column, board):
+                        moves.append((row, column))
 
         return moves
-
-
 
 if __name__ == '__main__':
     game = Othello()
