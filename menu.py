@@ -1,4 +1,4 @@
-# import main
+import multiplayer
 import alpha
 import pygame
 import button
@@ -15,7 +15,7 @@ pygame.display.set_caption("Othello")
 #game variables
 game_continue = False
 ai_action = False
-# multiplayer_action = False
+multiplayer_action = False
 
 #fonts
 font = pygame.font.SysFont("consolas", 30)
@@ -51,18 +51,18 @@ while run:
         ai_button.draw(screen)
         if quit_button.draw(screen):
             run = False
-        # if multiplayer_action:
-        #     from main import Othello
-        #     othello_game = Othello()  # create an instance of the Othello class
-        #     othello_game.run()  # call the run method of the Othello class
-        #     pygame.quit()
+        if multiplayer_action:
+            from multiplayer import Othellism
+            othello_game = Othellism()  # create an instance of the Othellism class
+            othello_game.run()  # call the run method of the Othellism class
+            pygame.quit()
         if ai_action:
-            from alpha import Othello
-            othello_game = Othello()  # create an instance of the Othello class
-            othello_game.run()  # call the run method of the Othello class
+            from alpha import Othellism
+            othello_game = Othellism()  # create an instance of the Othellism class
+            othello_game.run()  # call the run method of the Othellism class
             pygame.quit()
     else:
-        draw_text("Welcome to Othello", font, TEXT_COL, 250, 250)
+        draw_text("Welcome to Othellism", font, TEXT_COL, 235, 250)
         draw_text("Press SPACE to continue", font_small, TEXT_COL, 270, 310)
 
     #event handler
@@ -75,9 +75,9 @@ while run:
         if event.type == pygame.MOUSEBUTTONDOWN:
             if ai_button.draw(screen):
                 ai_action = True
-        # if event.type == pygame.MOUSEBUTTONDOWN:
-        #     if multiplayer_button.draw(screen):
-        #         multiplayer_action = True
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            if multiplayer_button.draw(screen):
+                multiplayer_action = True
     
     pygame.display.update()
 
