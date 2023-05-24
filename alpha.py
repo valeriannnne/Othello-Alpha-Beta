@@ -1,7 +1,6 @@
 import pygame
 import random
 import copy
-import numpy as np
 
 #  utility functions
 def directions(x, y, minX=0, minY=0, maxX=7, maxY=7):
@@ -39,69 +38,6 @@ def evaluateBoard(grid, player):
     for y, row in enumerate(grid):
         for x, col in enumerate(row):
             score -= col
-    return score
-
-def alpha_beta(board, depth, alpha, beta, maximizing_player):
-    if depth == 0:
-        return evaluate(board)
-
-    if maximizing_player:
-        best_value = -float("inf")
-        for move in get_all_moves(board):
-            new_board = make_move(board, move)
-            best_value = max(best_value, alpha_beta(new_board, depth - 1, alpha, beta, False))
-            alpha = max(alpha, best_value)
-            if alpha >= beta:
-                break
-        return best_value
-
-    else:
-        best_value = float("inf")
-        for move in get_all_moves(board):
-            new_board = make_move(board, move)
-            best_value = min(best_value, alpha_beta(new_board, depth - 1, alpha, beta, True))
-            beta = min(beta, best_value)
-            if alpha >= beta:
-                break
-        return best_value
-
-def get_all_moves(board):
-    moves = []
-    for row in range(board.size):
-        for col in range(board.size):
-            if board[row][col] == 0:
-                for direction in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
-                    new_row = row + direction[0]
-                    new_col = col + direction[1]
-                    while new_row >= 0 and new_row < board.size and new_col >= 0 and new_col < board.size:
-                        if board[new_row][new_col] != 0 and board[new_row][new_col] != board[row][col]:
-                            moves.append((row, col))
-                            break
-                        new_row += direction[0]
-                        new_col += direction[1]
-    return moves
-
-def make_move(board, move):
-    new_board = board.copy()
-    new_board[move[0]][move[1]] = board.current_player
-    for direction in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
-        new_row = move[0] + direction[0]
-        new_col = move[1] + direction[1]
-        while new_row >= 0 and new_row < board.size and new_col >= 0 and new_col < board.size:
-            if new_board[new_row][new_col] != 0 and new_board[new_row][new_col] != board.current_player:
-                new_board[new_row][new_col] = board.current_player
-                new_row += direction[0]
-                new_col += direction[1]
-    return new_board
-
-def evaluate(board):
-    score = 0
-    for row in range(board.size):
-        for col in range(board.size):
-            if board[row][col] == board.current_player:
-                score += 1
-            else:
-                score -= 1
     return score
 
 #  Classes
@@ -174,7 +110,7 @@ class Othellism:
                 if not self.grid.findAvailMoves(self.grid.gridLogic, self.currentPlayer):
                     self.gameOver = True
                     return
-                cell, score = self.computerPlayer.computerHard(self.grid.gridLogic, 5, -64, 64, -1)
+                cell, score = self.computerPlayer.computerHard(self.grid.gridLogic, 1, -64, 64, -1)
                 self.grid.insertToken(self.grid.gridLogic, self.currentPlayer, cell[0], cell[1])
                 swappableTiles = self.grid.swappableTiles(cell[0], cell[1], self.grid.gridLogic, self.currentPlayer)
                 for tile in swappableTiles:
