@@ -56,8 +56,8 @@ class Othellism:
         self.time = 0
         self.rows = 8
         self.columns = 8
-        self.player1time = 10000 # 300000 if 5 mins
-        self.player2time = 10000 # 300000 if 5 mins
+        self.player1time = 300000 # 300000 if 5 mins
+        self.player2time = 300000 # 300000 if 5 mins
 
         self.gameOver = False
         self.timer_active = False
@@ -140,7 +140,7 @@ class Othellism:
 
 
     def draw(self):
-        self.screen.fill((0, 0, 0))
+        self.screen.fill((255, 195, 77))
         self.grid.drawGrid(self.screen)
         pygame.display.update()
 
@@ -309,10 +309,10 @@ class Grid:
             endText = self.font.render(
                 f'{"Player 1 (White) wins!" if self.player1Score > self.player2Score else "Player 2 (Black) wins!" if self.player2Score > self.player1Score else Tie}', 1,'White')
 
-            win1 = self.font.render(f'{"Player 1 has run out of time "}', 1,'White')
-            win1_1 = self.font.render(f'{"Player 2 (Black) wins!"}', 1,'White')
-            win2 = self.font.render(f'{"Player 2 has run out of time "}', 1,'White')
-            win2_1 = self.font.render(f'{"Player 1 (White) wins!"}', 1,'White')
+            win1 = self.font.render(f'{"You ran out of time "}', 1,'White')
+            win1_1 = self.font.render(f'{"Alpha wins!"}', 1,'White')
+            win2 = self.font.render(f'{"Alpha has ran out of time "}', 1,'White')
+            win2_1 = self.font.render(f'{"You win!"}', 1,'White')
 
             if self.GAME.time1 == 1 :
                 endScreenImg.blit(win1, (50, 98))
@@ -335,8 +335,8 @@ class Grid:
         window.blit(self.gridBg, (0, 0))
         
         # for player turn
-        player1 = "Player 1's Turn"
-        player2 = "Player 2's Turn"
+        player1 = "Your Turn"
+        player2 = "Alpha's Turn"
         playerTurn = self.font2.render(
             f'{player1 if self.GAME.currentPlayer == 1 else player2}', 1,
             'Black')
@@ -345,8 +345,8 @@ class Grid:
 
         self.deductPlayerTime()
         window.blit(self.timer(self), (900, 150))
-        window.blit(self.drawScore('Player 1 (White)', self.player1Score), (850, 200))
-        window.blit(self.drawScore('Player 2 (Black)', self.player2Score), (850, 300))
+        window.blit(self.drawScore('Player (White)', self.player1Score), (850, 200))
+        window.blit(self.drawScore('Alpha Beta (Black)', self.player2Score), (850, 300))
 
         for token in self.tokens.values():
             token.draw(window)
