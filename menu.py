@@ -1,5 +1,3 @@
-import multiplayer
-import alpha
 import pygame
 import button
 

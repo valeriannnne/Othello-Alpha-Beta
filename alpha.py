@@ -2,6 +2,8 @@ import pygame
 import random
 import copy
 
+pygame.init()
+
 FPS = 60
 
 #  utility functions
