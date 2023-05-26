@@ -2,6 +2,8 @@ import pygame
 import random
 import copy
 
+FPS = 60
+
 #  utility functions
 def directions(x, y, minX=0, minY=0, maxX=7, maxY=7):
     """Check to determine which directions are valid from current cell"""
@@ -47,17 +49,20 @@ class Othellism:
         self.screen = pygame.display.set_mode((1100, 800))
         pygame.display.set_caption('Othellism')
 
-        self.player1 = 1
-        self.player2 = -1
+        self.player1 = 1 #White
+        self.player2 = -1 #Black
 
         self.currentPlayer = 1
-
         self.time = 0
-
         self.rows = 8
         self.columns = 8
+        self.player1time = 10000 # 300000 if 5 mins
+        self.player2time = 10000 # 300000 if 5 mins
 
-        self.gameOver = True
+        self.gameOver = False
+        self.timer_active = False
+        self.time1 = 0
+        self.time2 = 0
 
         self.grid = Grid(self.rows, self.columns, (80, 80), self)
         self.computerPlayer = ComputerPlayer(self.grid)
@@ -65,7 +70,10 @@ class Othellism:
         self.RUN = True
 
     def run(self):
+        clock = pygame.time.Clock()  # control the speed habang nagrurun
         while self.RUN == True:
+            clock.tick(FPS)
+            self.timer_active = True
             self.input()
             self.update()
             self.draw()
@@ -83,12 +91,14 @@ class Othellism:
                     if self.currentPlayer == 1 and not self.gameOver:
                         x, y = pygame.mouse.get_pos()
                         x, y = (x - 80) // 80, (y - 80) // 80
+                        # To make sure na hindi macclick yung hindi valid cell
                         validCells = self.grid.findAvailMoves(self.grid.gridLogic, self.currentPlayer)
                         if not validCells:
                             pass
                         else:
                             if (y, x) in validCells:
                                 self.grid.insertToken(self.grid.gridLogic, self.currentPlayer, y, x)
+                                #for swapping tiles
                                 swappableTiles = self.grid.swappableTiles(y, x, self.grid.gridLogic, self.currentPlayer)
                                 for tile in swappableTiles:
                                     self.grid.animateTransitions(tile, self.currentPlayer)
@@ -98,9 +108,13 @@ class Othellism:
 
                     if self.gameOver:
                         x, y = pygame.mouse.get_pos()
+                        #if user clicks the play again
                         if x >= 320 and x <= 480 and y >= 400 and y <= 480:
                             self.grid.newGame()
                             self.gameOver = False
+                            self.timer_active = True
+                            self.time1 = 0
+                            self.time2 = 0
 
 
     def update(self):
@@ -138,10 +152,10 @@ class Grid:
         self.size = size
         self.whitetoken = loadImages('assets/WhiteToken.png', size)
         self.blacktoken = loadImages('assets/BlackToken.png', size)
+        # load 3 images for each from the assets
         self.transitionWhiteToBlack = [loadImages(f'assets/BlackToWhite{i}.png', self.size) for i in range(1, 4)]
         self.transitionBlackToWhite = [loadImages(f'assets/WhiteToBlack{i}.png', self.size) for i in range(1, 4)]
         self.bg = self.loadBackGroundImages()
-
         self.tokens = {}
 
         self.gridBg = self.createbgimg()
@@ -150,8 +164,13 @@ class Grid:
 
         self.player1Score = 0
         self.player2Score = 0
+        self.time = 0
+        self.player1_time = self.GAME.player1time
+        self.player2_time = self.GAME.player2time
+        self.timer_font = pygame.font.Font(None, 36)  # Font for displaying the timer
 
         self.font = pygame.font.SysFont('Arial', 20, True, False)
+        self.font2 = pygame.font.SysFont('Tahoma', 28, True, False)
 
     def newGame(self):
         self.tokens.clear()
@@ -179,7 +198,7 @@ class Grid:
             ['C1', 'B0', 'A0', 'B0', 'A0', 'B0', 'A0', 'B0', 'A0', 'E1'],
             ['C2', 'D2', 'D2', 'D2', 'D2', 'D2', 'D2', 'D2', 'D2', 'E2'],
         ]
-        image = pygame.Surface((960, 960))
+        image = pygame.Surface((800, 800))
         for j, row in enumerate(gridBg):
             for i, img in enumerate(row):
                 image.blit(self.bg[img], (i * self.size[0], j * self.size[1]))
@@ -209,33 +228,142 @@ class Grid:
         return score
 
     def drawScore(self, player, score):
-        textImg = self.font.render(f'{player} : {score}', 1, 'White')
-        return textImg
+        textImg = self.font.render(f'{player} : {score}', True, 'White')
+        textRect = textImg.get_rect()
+
+        # Define colors
+        background_color = (20, 20, 20)  # Dark gray
+        border_color = (255, 255, 255)  # White
+        text_color = (255, 255, 255)  # White
+
+        # Add padding and border thickness
+        padding = 10
+        border_thickness = 2
+        total_width = textRect.width + 2 * padding + 2 * border_thickness
+        total_height = textRect.height + 2 * padding + 2 * border_thickness
+
+        # Create a surface for the background and draw a border
+        background_surface = pygame.Surface((total_width, total_height))
+        pygame.draw.rect(background_surface, border_color, (0, 0, total_width, total_height))
+        pygame.draw.rect(background_surface, background_color, (
+            border_thickness, border_thickness, total_width - 2 * border_thickness,
+            total_height - 2 * border_thickness))
+
+        # Blit the text image onto the background surface
+        background_surface.blit(textImg, (padding + border_thickness, padding + border_thickness))
+
+        # Add a drop shadow
+        shadow_offset = 4
+        shadow_surface = pygame.Surface((total_width, total_height), pygame.SRCALPHA)
+        # shadow_surface.fill((0, 0, 0, 100))
+        background_surface.blit(shadow_surface, (shadow_offset, shadow_offset))
+
+        return background_surface
+
+    def timer(self, window):
+
+        if self.GAME.gameOver:
+            self.GAME.timer_active = False
+            self.player1_time = self.GAME.player1time
+            self.player2_time = self.GAME.player2time
+
+        if self.GAME.timer_active:
+            self.player1_time -= (pygame.time.get_ticks() - self.time)
+            self.player2_time -= (pygame.time.get_ticks() - self.time)
+
+        # Check if any player has run out of time
+        if self.player1_time <= 0:
+            self.GAME.time1 = 1
+            self.GAME.gameOver = True
+        elif self.player2_time <= 0:
+            self.GAME.time2 = 1
+            self.GAME.gameOver = True
+
+        # Render and display the timers on the screen
+        player1_timer_text = self.timer_font.render(f"{self.player1_time // 1000} s", True,
+                                                    (0, 0, 0))
+        player2_timer_text = self.timer_font.render(f"{self.player2_time // 1000} s", True,
+                                                    (0, 0, 0))
+
+        if self.GAME.currentPlayer == 1:
+            return player1_timer_text
+        else:
+            return player2_timer_text
+
+    def deductPlayerTime(self):
+        if self.GAME.currentPlayer == 1:
+            self.player1_time -= pygame.time.get_ticks() - self.time
+        else:
+            self.player2_time -= pygame.time.get_ticks() - self.time
+        self.time = pygame.time.get_ticks()
+
+        # textImg = self.font.render(f'{player} : {score}', 1, 'White')
+        # return textImg
 
     def endScreen(self):
         if self.GAME.gameOver:
             endScreenImg = pygame.Surface((320, 320))
-            endText = self.font.render(f'{"Congratulations, You Won!!" if self.player1Score > self.player2Score else "Bad Luck, You Lost"}', 1, 'White')
-            endScreenImg.blit(endText, (0, 0))
+            endScreenImg.fill((211, 141, 36, 1))
+
+            Tie = "It's a draw"
+            endText = self.font.render(
+                f'{"Player 1 (White) wins!" if self.player1Score > self.player2Score else "Player 2 (Black) wins!" if self.player2Score > self.player1Score else Tie}', 1,'White')
+
+            win1 = self.font.render(f'{"Player 1 has run out of time "}', 1,'White')
+            win1_1 = self.font.render(f'{"Player 2 (Black) wins!"}', 1,'White')
+            win2 = self.font.render(f'{"Player 2 has run out of time "}', 1,'White')
+            win2_1 = self.font.render(f'{"Player 1 (White) wins!"}', 1,'White')
+
+            if self.GAME.time1 == 1 :
+                endScreenImg.blit(win1, (50, 98))
+                endScreenImg.blit(win1_1, (75, 122))
+            elif self.GAME.time2 == 1 :
+                endScreenImg.blit(win2, (50, 98))
+                endScreenImg.blit(win2_1, (75, 122))
+            else:
+                endScreenImg.blit(endText, (77, 110))
+
+
             newGame = pygame.draw.rect(endScreenImg, 'White', (80, 160, 160, 80))
             newGameText = self.font.render('Play Again', 1, 'Black')
             endScreenImg.blit(newGameText, (120, 190))
+
         return endScreenImg
 
 
     def drawGrid(self, window):
         window.blit(self.gridBg, (0, 0))
+        
+        # for player turn
+        player1 = "Player 1's Turn"
+        player2 = "Player 2's Turn"
+        playerTurn = self.font2.render(
+            f'{player1 if self.GAME.currentPlayer == 1 else player2}', 1,
+            'Black')
 
-        window.blit(self.drawScore('White', self.player1Score), (900, 100))
-        window.blit(self.drawScore('Black', self.player2Score), (900, 200))
+        window.blit(playerTurn, (850, 100))
+
+        self.deductPlayerTime()
+        window.blit(self.timer(self), (900, 150))
+        window.blit(self.drawScore('Player 1 (White)', self.player1Score), (850, 200))
+        window.blit(self.drawScore('Player 2 (Black)', self.player2Score), (850, 300))
 
         for token in self.tokens.values():
             token.draw(window)
 
         availMoves = self.findAvailMoves(self.gridLogic, self.GAME.currentPlayer)
+        
         if self.GAME.currentPlayer == 1:
+            # print("Player 1")
             for move in availMoves:
-                pygame.draw.rect(window, 'White', (80 + (move[1] * 80) + 30, 80 + (move[0] * 80) + 30, 20, 20))
+                # for the white tiles na nagsasabi kung ano yung pwedeng paglagyan ng player
+                pygame.draw.circle(window, 'Black', (80 + (move[1] * 80) + 40, 80 + (move[0] * 80) + 40), 30)
+                pygame.draw.circle(window, 'White', (80 + (move[1] * 80) + 40, 80 + (move[0] * 80) + 40), 25)
+        else:
+            # print("Player 2")
+            for move in availMoves:
+                pygame.draw.circle(window, 'White', (80 + (move[1] * 80) + 40, 80 + (move[0] * 80) + 40), 30)
+                pygame.draw.circle(window, 'Black', (80 + (move[1] * 80) + 40, 80 + (move[0] * 80) + 40), 25)
 
         if self.GAME.gameOver:
             window.blit(self.endScreen(), (240, 240))
@@ -272,15 +400,15 @@ class Grid:
         return validCellToClick
 
     def swappableTiles(self, x, y, grid, player):
-        surroundCells = directions(x, y)
-        if len(surroundCells) == 0:
-            return []
+        surroundCells = directions(x, y)        # obtain surrounding cells of specified cell
+        if len(surroundCells) == 0:     # if surround cells is empty, meaning no tiles to swap
+            return []       # return empty list
 
         swappableTiles = []
         for checkCell in surroundCells:
-            checkX, checkY = checkCell
+            checkX, checkY = checkCell          # each cell is assigned to checkCell
             difX, difY = checkX - x, checkY - y
-            currentLine = []
+            currentLine = []            # store the tiles in the current line
 
             RUN = True
             while RUN:
@@ -305,25 +433,26 @@ class Grid:
         return swappableTiles
 
     def findAvailMoves(self, grid, currentPlayer):
-        """Takes the list of validCells and checks each to see if playable"""
-        validCells = self.findValidCells(grid, currentPlayer)
-        playableCells = []
+        # takes the list of valid cells and check each to see if playable
+         validCells = self.findValidCells(grid, currentPlayer)  # for storing valid cells that can be potentially played
+         playableCells = []     # empty list to store avail moves
 
-        for cell in validCells:
-            x, y = cell
-            if cell in playableCells:
-                continue
-            swapTiles = self.swappableTiles(x, y, grid, currentPlayer)
+         for cell in validCells:       # iterate over each cell of board. Check if the cell is empty or not occupied
+             x, y = cell               # coordinates of the current cell
+             if cell in playableCells:      # check if cell is in the list of playable
+                 continue
+             swapTiles = self.swappableTiles(x, y, grid, currentPlayer)     # determine the tiles that can be swapped if
+                                                                            #current cell is played
+            # check if swapTiles is not empty
+             if len(swapTiles) > 0:
+                 playableCells.append(cell)     # current cell is added to the playable cell since there are swappable
 
-            #if len(swapTiles) > 0 and cell not in playableCells:
-            if len(swapTiles) > 0:
-                playableCells.append(cell)
-
-        return playableCells
+         return playableCells   # return the list of available moves
 
     def insertToken(self, grid, curplayer, y, x):
         tokenImage = self.whitetoken if curplayer == 1 else self.blacktoken
         self.tokens[(y, x)] = Token(curplayer, y, x, tokenImage, self.GAME)
+        # x is row, y is column
         grid[y][x] = self.tokens[(y, x)].player
 
     def animateTransitions(self, cell, player):
