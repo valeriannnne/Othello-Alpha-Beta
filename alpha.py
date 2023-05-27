@@ -121,13 +121,7 @@ class Othellism:
                             self.timer_active = True
                             self.time1 = 0
                             self.time2 = 0      
-                            self.currentPlayer = 1                  
-                        #if user clicks Main Menu
-                        if x >= 320 and x <= 480 and y >= 500 and y <= 640:
-                            import menu
-                            menu.main()
-
-
+                            self.currentPlayer = 1      
 
     def update(self):
         if self.currentPlayer == -1:
@@ -313,7 +307,7 @@ class Grid:
 
     def endScreen(self):
         if self.GAME.gameOver:
-            endScreenImg = pygame.Surface((320, 390))
+            endScreenImg = pygame.Surface((320, 320))
             endScreenImg.fill((211, 141, 36, 1))
 
             Tie = "It's a draw"
@@ -335,12 +329,9 @@ class Grid:
                 endScreenImg.blit(endText, (77, 110))
 
         newGame = pygame.draw.rect(endScreenImg, 'White', (80, 160, 160, 80))
-        backToMenuBG = pygame.draw.rect(endScreenImg, 'White', (80, 260, 160, 80))
         newGameText = self.font.render('Play Again', 1, 'Black')
-        backToMenu = self.font.render('Main Menu', 1, 'Black')
 
         endScreenImg.blit(newGameText, (120, 190))
-        endScreenImg.blit(backToMenu, (120, 290))
 
         return endScreenImg
 
