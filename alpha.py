@@ -88,6 +88,10 @@ class Othellism:
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 3:
                     self.grid.printGameLogicBoard()
+                x, y = pygame.mouse.get_pos()
+                if x >= 850 and x <= 1010 and y >= 415 and y <= 475:
+                    from menu import game_continue
+                    game_continue = False
 
                 if event.button == 1:
                     if self.currentPlayer == 1 and not self.gameOver:
@@ -116,7 +120,8 @@ class Othellism:
                             self.gameOver = False
                             self.timer_active = True
                             self.time1 = 0
-                            self.time2 = 0
+                            self.time2 = 0      
+                            self.currentPlayer = 1                  
                         #if user clicks Main Menu
                         if x >= 320 and x <= 480 and y >= 500 and y <= 640:
                             import menu
@@ -144,7 +149,6 @@ class Othellism:
         if not self.grid.findAvailMoves(self.grid.gridLogic, self.currentPlayer):
             self.gameOver = True
             return
-
 
     def draw(self):
         self.screen.fill((255, 195, 77))
@@ -357,6 +361,10 @@ class Grid:
         window.blit(self.timer(self), (900, 150))
         window.blit(self.drawScore('Player (White)', self.player1Score), (850, 200))
         window.blit(self.drawScore('Alpha Beta (Black)', self.player2Score), (850, 300))
+        #add
+        backToMenuBG = pygame.draw.rect(window, 'White', (850, 415, 160, 60))
+        window.blit(self.font.render('Main Menu', 1,'Black'), (885, 430))
+        x, y = pygame.mouse.get_pos()
 
         for token in self.tokens.values():
             token.draw(window)
