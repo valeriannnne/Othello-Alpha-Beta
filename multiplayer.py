@@ -67,8 +67,8 @@ class Othellism:
         self.time = 0
         self.rows = 8
         self.columns = 8
-        self.player1time = 10000 # 300000 if 5 mins
-        self.player2time = 10000 # 300000 if 5 mins
+        self.player1time = 300000 # 300000 if 5 mins
+        self.player2time = 300000 # 300000 if 5 mins
 
         self.gameOver = False
         self.timer_active = False
